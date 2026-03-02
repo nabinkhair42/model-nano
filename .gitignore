@@ -1,0 +1,45 @@
+# Data
+data/raw/
+*.jsonl
+*.bin
+*.npy
+
+# Model checkpoints
+checkpoints/
+*.pt
+*.onnx
+*.gguf
+
+# Tokenizer artifacts
+tokenizer/tokenizer.json
+tokenizer/vocab.json
+tokenizer/merges.txt
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Env
+.env
+.venv/
+venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+wandb/
+runs/

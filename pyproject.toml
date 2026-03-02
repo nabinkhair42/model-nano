@@ -1,0 +1,57 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "model-nano"
+version = "0.1.0"
+description = "A small (~45M) transformer LLM specialized for Git/GitHub developer assistance"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "model-nano contributors"},
+]
+keywords = ["git", "llm", "transformer", "developer-tools", "cli"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Version Control :: Git",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+dependencies = [
+    "torch>=2.1.0",
+    "tokenizers>=0.15.0",
+    "tqdm>=4.66.0",
+    "numpy>=1.24.0",
+    "rich>=13.0.0",
+    "click>=8.1.0",
+    "gitpython>=3.1.0",
+]
+
+[project.optional-dependencies]
+train = [
+    "datasets>=2.16.0",
+    "safetensors>=0.4.0",
+    "wandb>=0.16.0",
+    "beautifulsoup4>=4.12.0",
+    "lxml>=5.0.0",
+    "requests>=2.31.0",
+]
+export = [
+    "onnx>=1.15.0",
+    "onnxruntime>=1.17.0",
+]
+dev = [
+    "pytest>=7.0",
+    "ruff>=0.1.0",
+]
+
+[project.scripts]
+git-nano = "cli.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["model*", "inference*", "cli*", "training*", "data*", "tokenizer*", "eval*"]

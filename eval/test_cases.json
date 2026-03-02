@@ -1,0 +1,352 @@
+[
+    {
+        "id": 1,
+        "category": "basic",
+        "query": "How do I stage all modified files?",
+        "expected": ["git add -A", "git add --all", "git add ."],
+        "type": "command"
+    },
+    {
+        "id": 2,
+        "category": "basic",
+        "query": "How do I create a new git repository in the current directory?",
+        "expected": ["git init"],
+        "type": "command"
+    },
+    {
+        "id": 3,
+        "category": "basic",
+        "query": "Clone a repository from GitHub",
+        "expected": ["git clone <url>", "git clone"],
+        "type": "command"
+    },
+    {
+        "id": 4,
+        "category": "basic",
+        "query": "How do I commit my staged changes with a message?",
+        "expected": ["git commit -m \"message\"", "git commit -m \"<message>\"", "git commit -m '<message>'"],
+        "type": "command"
+    },
+    {
+        "id": 5,
+        "category": "basic",
+        "query": "Push my commits to the remote repository",
+        "expected": ["git push", "git push origin main", "git push origin master"],
+        "type": "command"
+    },
+    {
+        "id": 6,
+        "category": "basic",
+        "query": "Pull the latest changes from the remote",
+        "expected": ["git pull", "git pull origin main", "git pull origin master"],
+        "type": "command"
+    },
+    {
+        "id": 7,
+        "category": "basic",
+        "query": "Check the current status of my repository",
+        "expected": ["git status"],
+        "type": "command"
+    },
+    {
+        "id": 8,
+        "category": "basic",
+        "query": "Stage a specific file called app.py",
+        "expected": ["git add app.py"],
+        "type": "command"
+    },
+    {
+        "id": 9,
+        "category": "basic",
+        "query": "Remove a file from the staging area but keep it on disk",
+        "expected": ["git reset HEAD <file>", "git restore --staged <file>", "git reset <file>"],
+        "type": "command"
+    },
+    {
+        "id": 10,
+        "category": "basic",
+        "query": "What is the difference between git add and git commit?",
+        "expected": "git add stages changes in the working directory for the next commit. It moves changes to the staging area (index). git commit records the staged snapshot to the repository history, creating a new commit with a message. You must add before you commit.",
+        "type": "explanation"
+    },
+    {
+        "id": 11,
+        "category": "branching",
+        "query": "Create a new branch called feature-login",
+        "expected": ["git branch feature-login", "git checkout -b feature-login", "git switch -c feature-login"],
+        "type": "command"
+    },
+    {
+        "id": 12,
+        "category": "branching",
+        "query": "Switch to an existing branch called develop",
+        "expected": ["git checkout develop", "git switch develop"],
+        "type": "command"
+    },
+    {
+        "id": 13,
+        "category": "branching",
+        "query": "List all branches including remote branches",
+        "expected": ["git branch -a", "git branch --all"],
+        "type": "command"
+    },
+    {
+        "id": 14,
+        "category": "branching",
+        "query": "Delete a local branch called old-feature",
+        "expected": ["git branch -d old-feature", "git branch --delete old-feature"],
+        "type": "command"
+    },
+    {
+        "id": 15,
+        "category": "branching",
+        "query": "Merge the feature branch into main",
+        "expected": ["git merge feature", "git merge feature-branch"],
+        "type": "command"
+    },
+    {
+        "id": 16,
+        "category": "branching",
+        "query": "Create and switch to a new branch called hotfix in one command",
+        "expected": ["git checkout -b hotfix", "git switch -c hotfix"],
+        "type": "command"
+    },
+    {
+        "id": 17,
+        "category": "branching",
+        "query": "Rename the current branch to new-name",
+        "expected": ["git branch -m new-name", "git branch --move new-name"],
+        "type": "command"
+    },
+    {
+        "id": 18,
+        "category": "branching",
+        "query": "What is the difference between merge and rebase?",
+        "expected": "Merge creates a new merge commit that combines two branches, preserving the full branch history. Rebase replays commits from one branch onto another, creating a linear history. Merge is safer for shared branches; rebase creates a cleaner history but rewrites commits.",
+        "type": "explanation"
+    },
+    {
+        "id": 19,
+        "category": "history",
+        "query": "Show the last 5 commits in one line each",
+        "expected": ["git log --oneline -5", "git log --oneline -n 5", "git log -5 --oneline", "git log -n 5 --oneline"],
+        "type": "command"
+    },
+    {
+        "id": 20,
+        "category": "history",
+        "query": "Show the diff of what changed in the last commit",
+        "expected": ["git show", "git diff HEAD~1", "git show HEAD"],
+        "type": "command"
+    },
+    {
+        "id": 21,
+        "category": "history",
+        "query": "See the changes between the staging area and the last commit",
+        "expected": ["git diff --cached", "git diff --staged"],
+        "type": "command"
+    },
+    {
+        "id": 22,
+        "category": "history",
+        "query": "Who last modified each line of the file server.py?",
+        "expected": ["git blame server.py"],
+        "type": "command"
+    },
+    {
+        "id": 23,
+        "category": "history",
+        "query": "Revert the last commit without losing changes",
+        "expected": ["git revert HEAD", "git reset --soft HEAD~1"],
+        "type": "command"
+    },
+    {
+        "id": 24,
+        "category": "history",
+        "query": "Completely undo the last commit and discard its changes",
+        "expected": ["git reset --hard HEAD~1"],
+        "type": "command"
+    },
+    {
+        "id": 25,
+        "category": "history",
+        "query": "Show a graph of the branch history",
+        "expected": ["git log --oneline --graph --all", "git log --graph --oneline --all", "git log --oneline --graph", "git log --graph --oneline"],
+        "type": "command"
+    },
+    {
+        "id": 26,
+        "category": "history",
+        "query": "What does git reset do and what are the differences between soft, mixed, and hard?",
+        "expected": "git reset moves the HEAD pointer to a specified commit. --soft keeps changes staged, --mixed (default) unstages changes but keeps them in the working directory, and --hard discards all changes completely. Use soft to recommit, mixed to restage selectively, and hard to throw away work.",
+        "type": "explanation"
+    },
+    {
+        "id": 27,
+        "category": "remote",
+        "query": "Add a new remote called upstream pointing to a URL",
+        "expected": ["git remote add upstream <url>", "git remote add upstream"],
+        "type": "command"
+    },
+    {
+        "id": 28,
+        "category": "remote",
+        "query": "List all configured remotes with their URLs",
+        "expected": ["git remote -v", "git remote --verbose"],
+        "type": "command"
+    },
+    {
+        "id": 29,
+        "category": "remote",
+        "query": "Remove a remote called old-origin",
+        "expected": ["git remote remove old-origin", "git remote rm old-origin"],
+        "type": "command"
+    },
+    {
+        "id": 30,
+        "category": "remote",
+        "query": "Fetch changes from all remotes without merging",
+        "expected": ["git fetch --all", "git fetch"],
+        "type": "command"
+    },
+    {
+        "id": 31,
+        "category": "remote",
+        "query": "Push a new local branch to remote and set up tracking",
+        "expected": ["git push -u origin <branch>", "git push --set-upstream origin <branch>", "git push -u origin branch-name"],
+        "type": "command"
+    },
+    {
+        "id": 32,
+        "category": "remote",
+        "query": "How do I update my fork with the latest changes from the original repository?",
+        "expected": "First add the original repo as an upstream remote with git remote add upstream <url>. Then fetch the upstream changes with git fetch upstream. Finally merge or rebase onto your branch with git merge upstream/main or git rebase upstream/main, and push to your fork with git push origin main.",
+        "type": "explanation"
+    },
+    {
+        "id": 33,
+        "category": "stash",
+        "query": "Temporarily save my uncommitted changes",
+        "expected": ["git stash", "git stash push", "git stash save"],
+        "type": "command"
+    },
+    {
+        "id": 34,
+        "category": "stash",
+        "query": "Restore the most recently stashed changes",
+        "expected": ["git stash pop", "git stash apply"],
+        "type": "command"
+    },
+    {
+        "id": 35,
+        "category": "stash",
+        "query": "List all stashed changes",
+        "expected": ["git stash list"],
+        "type": "command"
+    },
+    {
+        "id": 36,
+        "category": "stash",
+        "query": "Drop the most recent stash entry",
+        "expected": ["git stash drop", "git stash drop stash@{0}"],
+        "type": "command"
+    },
+    {
+        "id": 37,
+        "category": "config",
+        "query": "Set my git username to John Doe",
+        "expected": ["git config --global user.name \"John Doe\"", "git config user.name \"John Doe\""],
+        "type": "command"
+    },
+    {
+        "id": 38,
+        "category": "config",
+        "query": "Set my git email address to john@example.com",
+        "expected": ["git config --global user.email \"john@example.com\"", "git config user.email \"john@example.com\"", "git config --global user.email john@example.com"],
+        "type": "command"
+    },
+    {
+        "id": 39,
+        "category": "config",
+        "query": "Create a git alias so that 'git st' runs 'git status'",
+        "expected": ["git config --global alias.st status", "git config alias.st status"],
+        "type": "command"
+    },
+    {
+        "id": 40,
+        "category": "config",
+        "query": "List all my git configuration settings",
+        "expected": ["git config --list", "git config -l", "git config --global --list"],
+        "type": "command"
+    },
+    {
+        "id": 41,
+        "category": "error_recovery",
+        "query": "I committed to the wrong branch. How do I undo the last commit but keep my changes?",
+        "expected": ["git reset --soft HEAD~1"],
+        "type": "command"
+    },
+    {
+        "id": 42,
+        "category": "error_recovery",
+        "query": "How do I resolve a merge conflict?",
+        "expected": "Open the conflicted files and look for conflict markers (<<<<<<< HEAD, =======, >>>>>>> branch). Edit the files to resolve the conflicts by choosing the correct code. Then stage the resolved files with git add and complete the merge with git commit.",
+        "type": "explanation"
+    },
+    {
+        "id": 43,
+        "category": "error_recovery",
+        "query": "I'm in a detached HEAD state. How do I get back to my branch?",
+        "expected": ["git checkout main", "git switch main", "git checkout -", "git switch -"],
+        "type": "command"
+    },
+    {
+        "id": 44,
+        "category": "error_recovery",
+        "query": "My push was rejected because the remote has changes I don't have. What do I do?",
+        "expected": "Pull the remote changes first with git pull --rebase (or git pull) to integrate the remote commits with your local ones. Resolve any conflicts if they arise, then push again with git push. Alternatively use git fetch followed by git rebase origin/main and then git push.",
+        "type": "explanation"
+    },
+    {
+        "id": 45,
+        "category": "error_recovery",
+        "query": "I want to amend the message of my last commit",
+        "expected": ["git commit --amend -m \"new message\"", "git commit --amend"],
+        "type": "command"
+    },
+    {
+        "id": 46,
+        "category": "error_recovery",
+        "query": "I accidentally deleted a file. How do I restore it from the last commit?",
+        "expected": ["git checkout -- <file>", "git restore <file>", "git checkout HEAD -- <file>"],
+        "type": "command"
+    },
+    {
+        "id": 47,
+        "category": "github_cli",
+        "query": "Create a pull request with the GitHub CLI",
+        "expected": ["gh pr create", "gh pr create --fill"],
+        "type": "command"
+    },
+    {
+        "id": 48,
+        "category": "github_cli",
+        "query": "List all open issues in the current repo using the GitHub CLI",
+        "expected": ["gh issue list", "gh issue list --state open"],
+        "type": "command"
+    },
+    {
+        "id": 49,
+        "category": "github_cli",
+        "query": "Clone a GitHub repository using the GitHub CLI",
+        "expected": ["gh repo clone <owner/repo>", "gh repo clone"],
+        "type": "command"
+    },
+    {
+        "id": 50,
+        "category": "github_cli",
+        "query": "View the status of checks on the current PR with the GitHub CLI",
+        "expected": ["gh pr checks", "gh pr status"],
+        "type": "command"
+    }
+]
