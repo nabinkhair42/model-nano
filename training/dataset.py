@@ -73,10 +73,10 @@ class SFTDataset(Dataset):
     generate responses, not to parrot the prompts.
     """
 
-    # Sentinel special-token IDs used for runtime mask inference when no
-    # companion mask file is available.  These must match the tokenizer.
-    IM_START_ID: int = 16384 - 3  # <|im_start|> — vocab_size - 3
-    IM_END_ID: int = 16384 - 2    # <|im_end|>   — vocab_size - 2
+    # Sentinel special-token IDs — must match tokenizer/tokenizer.json.
+    # The tokenizer assigns special tokens first: <|im_start|>=0, <|im_end|>=1.
+    IM_START_ID: int = 0   # <|im_start|>
+    IM_END_ID: int = 1     # <|im_end|>
 
     def __init__(
         self,
