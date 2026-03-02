@@ -82,6 +82,59 @@ The complete project was built from scratch in a single session. Everything belo
 
 ---
 
+## [0.1.1] - 2026-03-03
+
+### First Real Training Run — Phase 1 Pre-training Complete
+
+#### Dataset (actual numbers from run)
+
+| Source | Records | Tokens |
+|--------|---------|--------|
+| Pro Git book | 106 docs | — |
+| tldr-pages | 202 docs | — |
+| GitHub Docs | 1,412 docs | — |
+| Synthetic | 5,000 pairs | — |
+| **After dedup** | **2,634 records** | **1,684,795 tokens** |
+
+- Git man pages: **0 documents** parsed (bug — AsciiDoc parser missed them, needs fix)
+- Stack Overflow: not collected (no data dump available)
+- Tokenizer: full 16,384 vocab achieved from combined corpus
+- Train split: 1,600,315 tokens (3,125 chunks), Val split: 84,480 tokens (165 chunks)
+
+#### Phase 1 Pre-training Results
+
+| Metric | Value |
+|--------|-------|
+| Total steps | 960 |
+| Epochs | 20 |
+| Total tokens processed | 31,907,840 (~32M) |
+| Training time | ~6,060s (~1h 41m) |
+| GPU memory peak | 795 MB / 4,096 MB |
+| Speed | ~5,000–5,300 tok/s |
+| Initial train loss | 8.96 (step 10) |
+| Final train loss | 0.62 (step 960) |
+| Best val loss | 3.19 (step 500) — saved as `checkpoints/best.pt` |
+| Final checkpoint | `checkpoints/final.pt` |
+
+#### Analysis
+
+**What went well:**
+- Loss decreased smoothly from 8.96 → 0.62 with no NaN/explosion
+- GPU memory stayed at 795 MB — well within the 4GB budget
+- Stable throughput (~5,200 tok/s consistent throughout)
+- Gradient norm well-controlled (0.3–0.9 range after warmup)
+- BF16 + gradient checkpointing working correctly
+
+**Overfitting — expected at this data scale:**
+- Train loss (0.62) vs val loss (3.19 at step 500) shows significant overfitting
+- Root cause: only 1.6M training tokens with a 58M parameter model. The model has enough capacity to near-memorize the training set.
+- The ratio is ~27 parameters per training token — typical guidance is 10–20 tokens per parameter (Chinchilla). We need ~600M tokens for compute-optimal training at this size, or ~6B for "overtrained" inference-optimal training.
+- **Best checkpoint is `checkpoints/best.pt` (val_loss 3.19, step 500)**, not `final.pt`
+
+**Next step: run SFT on best.pt, then massively expand the dataset.**
+
+---
+
 ## Known Issues
 
 1. **Tokenizer vocab size** — When trained only on synthetic data (no external docs), the vocab is ~1,500 tokens instead of the target 16,384. This is expected; the full vocab is reached when training on the complete corpus (Pro Git + man pages + SO + synthetic).
@@ -97,9 +150,12 @@ The complete project was built from scratch in a single session. Everything belo
 See the roadmap in [ARCHITECTURE.md](ARCHITECTURE.md) for detailed technical improvements.
 
 ### High Priority
-- [ ] Collect full real-world data corpus (Pro Git, man pages, Stack Overflow)
-- [ ] Train tokenizer on full corpus to reach 16,384 vocab
-- [ ] Complete Phase 1 pre-training run
+- [x] Collect real-world data corpus (Pro Git, tldr, GitHub Docs) ✓
+- [x] Train tokenizer on full corpus — 16,384 vocab achieved ✓
+- [x] Complete Phase 1 pre-training run ✓ (val_loss 3.19)
+- [ ] **Fix git man pages parser** — 0/168 man pages parsed (AsciiDoc `.txt` detection broken)
+- [ ] **Collect Stack Overflow data** — biggest quality signal missing (~30K-50K pairs)
+- [ ] **Expand synthetic data** — currently 5K pairs, target 50K+
 - [ ] Complete Phase 2 SFT run
 - [ ] Run benchmark and establish baseline accuracy
 
