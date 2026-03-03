@@ -34,9 +34,16 @@ def _load_engine(model: str | None, tokenizer: str | None, device: str):
     """
     resolved_device = _resolve_device(device)
 
-    # Default paths if not specified
+    # Default paths if not specified — prefer SFT checkpoint, fall back to pretrain
     if model is None:
-        model = "checkpoints/model.pt"
+        import os
+        candidates = [
+            "checkpoints/sft/best.pt",
+            "checkpoints/sft/final.pt",
+            "checkpoints/best.pt",
+            "checkpoints/final.pt",
+        ]
+        model = next((p for p in candidates if os.path.exists(p)), candidates[0])
     if tokenizer is None:
         tokenizer = "tokenizer/tokenizer.json"
 

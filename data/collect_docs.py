@@ -70,18 +70,32 @@ def _strip_asciidoc(text: str) -> str:
 
 def _strip_markdown(text: str) -> str:
     """Rough Markdown-to-plaintext conversion."""
+    # Strip YAML / TOML front matter
+    text = re.sub(r"^---\n.*?\n---\n?", "", text, count=1, flags=re.DOTALL)
+    # Remove Liquid / Jekyll template tags  {% ... %} and {{ ... }}
+    text = re.sub(r"\{%[-\s].*?[-\s]%\}", "", text, flags=re.DOTALL)
+    text = re.sub(r"\{\{.*?\}\}", "", text, flags=re.DOTALL)
+    # Remove HTML comments
+    text = re.sub(r"<!--.*?-->", "", text, flags=re.DOTALL)
     # Remove HTML tags
     text = re.sub(r"<[^>]+>", "", text)
     # Remove images  ![alt](url)
     text = re.sub(r"!\[[^\]]*\]\([^)]*\)", "", text)
-    # Convert links  [text](url) -> text
+    # Remove links where text is AUTOTITLE or empty — [AUTOTITLE](/path) -> ""
+    text = re.sub(r"\[AUTOTITLE\]\([^)]*\)", "", text)
+    text = re.sub(r"\[\]\([^)]*\)", "", text)
+    # Convert remaining links  [text](url) -> text
     text = re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", text)
+    # Remove reference-style link definitions  [label]: url
+    text = re.sub(r"^\[[^\]]+\]:\s+\S+.*$", "", text, flags=re.MULTILINE)
     # Remove heading markers
     text = re.sub(r"^#{1,6}\s+", "", text, flags=re.MULTILINE)
     # Remove bold/italic markers
     text = re.sub(r"(\*{1,2}|_{1,2})(.+?)\1", r"\2", text)
     # Remove inline code backticks (keep content)
     text = re.sub(r"`([^`]+)`", r"\1", text)
+    # Remove lines that are only punctuation/symbols (table separators, etc.)
+    text = re.sub(r"^[\s\|\-\:]+$", "", text, flags=re.MULTILINE)
     # Collapse blank lines
     text = re.sub(r"\n{3,}", "\n\n", text)
     return text.strip()
@@ -120,11 +134,25 @@ def collect_git_manpages(clone_dir: str) -> list[dict]:
     """Parse git man-page sources (Documentation/*.txt)."""
     repo_url = "https://github.com/git/git.git"
     dest = os.path.join(clone_dir, "git")
+
+    # If the docs dir is missing or empty, re-clone
+    docs_dir = Path(dest) / "Documentation"
+    if not docs_dir.is_dir() or not any(docs_dir.glob("*.txt")):
+        import shutil
+        if os.path.isdir(dest):
+            print(f"  [stale] Removing incomplete clone at {dest}")
+            shutil.rmtree(dest)
     _clone_repo(repo_url, dest)
 
-    docs_dir = os.path.join(dest, "Documentation")
+    docs_dir = Path(dest) / "Documentation"
     records: list[dict] = []
-    for path in sorted(Path(docs_dir).glob("*.txt")):
+
+    if not docs_dir.is_dir():
+        print(f"  Git man pages: Documentation/ dir not found in {dest}")
+        return records
+
+    # git-*.txt are the command man pages; also grab gitattributes.txt etc.
+    for path in sorted(docs_dir.glob("*.txt")):
         try:
             raw = path.read_text(encoding="utf-8", errors="replace")
         except OSError:
@@ -197,10 +225,14 @@ def collect_github_docs(clone_dir: str) -> list[dict]:
         cleaned = _strip_markdown(raw)
         if len(cleaned) < 100:
             continue
-        # Strip YAML front matter
-        cleaned = re.sub(r"^---\n.*?\n---\n?", "", cleaned, count=1, flags=re.DOTALL)
-        cleaned = cleaned.strip()
-        if len(cleaned) < 100:
+        # Skip files that still contain too many template artifacts
+        autotitle_count = cleaned.count("AUTOTITLE")
+        if autotitle_count > 2:
+            continue
+        # Skip files where more than 20% of lines are empty (over-stripped)
+        lines = cleaned.splitlines()
+        non_empty = sum(1 for l in lines if l.strip())
+        if len(lines) > 10 and non_empty / len(lines) < 0.3:
             continue
         records.append({
             "text": cleaned,
