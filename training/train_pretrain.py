@@ -251,12 +251,12 @@ def train(args):
 
     effective_batch = train_cfg.micro_batch_size * train_cfg.grad_accumulation_steps
     print(f"Effective batch size: {effective_batch} "
-          f"({train_cfg.micro_batch_size} micro x {train_cfg.grad_accumulation_steps} accum)")
-    print(f"Total steps: {total_steps}, warmup: {warmup_steps}")
-    print(f"Training for {train_cfg.max_epochs} epochs, {steps_per_epoch} steps/epoch")
-    print(f"Gradient checkpointing: {use_grad_ckpt}")
-    print(f"Device: {device}, dtype: {train_cfg.dtype}")
-    print("-" * 80)
+          f"({train_cfg.micro_batch_size} micro x {train_cfg.grad_accumulation_steps} accum)", flush=True)
+    print(f"Total steps: {total_steps}, warmup: {warmup_steps}", flush=True)
+    print(f"Training for {train_cfg.max_epochs} epochs, {steps_per_epoch} steps/epoch", flush=True)
+    print(f"Gradient checkpointing: {use_grad_ckpt}", flush=True)
+    print(f"Device: {device}, dtype: {train_cfg.dtype}", flush=True)
+    print("-" * 80, flush=True)
 
     step_start_time = time.time()
     accum_loss = 0.0

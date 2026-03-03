@@ -180,7 +180,7 @@ if should_run "step2"; then
         log_step "Step 2/8 — Collect documentation"
         STEP_START=$(date +%s)
 
-        python data/collect_docs.py --clone-dir "$CLONE_DIR"
+        python -u data/collect_docs.py --clone-dir "$CLONE_DIR"
 
         # Verify output
         if [ ! -f "data/raw/docs.jsonl" ]; then
@@ -202,7 +202,7 @@ if should_run "step3"; then
     log_step "Step 3/8 — Generate synthetic data"
     STEP_START=$(date +%s)
 
-    python data/generate_synthetic.py --count "$SYNTHETIC_COUNT"
+    python -u data/generate_synthetic.py --count "$SYNTHETIC_COUNT"
 
     if [ ! -f "data/raw/synthetic.jsonl" ]; then
         die "data/raw/synthetic.jsonl not created"
@@ -218,7 +218,7 @@ if should_run "step4"; then
     log_step "Step 4/8 — Train BPE tokenizer"
     STEP_START=$(date +%s)
 
-    python tokenizer/train_tokenizer.py
+    python -u tokenizer/train_tokenizer.py
 
     if [ ! -f "tokenizer/tokenizer.json" ]; then
         die "tokenizer/tokenizer.json not created"
@@ -234,7 +234,7 @@ if should_run "step5"; then
     log_step "Step 5/8 — Prepare pretrain dataset"
     STEP_START=$(date +%s)
 
-    python data/prepare_dataset.py
+    python -u data/prepare_dataset.py
 
     if [ ! -f "data/train.bin" ] || [ ! -f "data/val.bin" ]; then
         die "data/train.bin or data/val.bin not created"
@@ -250,7 +250,7 @@ if should_run "step6"; then
     log_step "Step 6/8 — Prepare SFT dataset (with loss masks)"
     STEP_START=$(date +%s)
 
-    python data/prepare_sft.py
+    python -u data/prepare_sft.py
 
     if [ ! -f "data/sft/train.bin" ] || [ ! -f "data/sft/train.mask.bin" ]; then
         die "data/sft/train.bin or train.mask.bin not created"
@@ -268,7 +268,7 @@ if should_run "step7"; then
     log_info "This is the long step. Monitor GPU: watch -n1 nvidia-smi"
     echo ""
 
-    python -m training.train_pretrain \
+    python -u -m training.train_pretrain \
         --epochs "$PRETRAIN_EPOCHS" \
         --checkpoint-dir checkpoints/pretrain
 
@@ -309,7 +309,7 @@ if should_run "step8"; then
 
     log_info "Loading pretrain weights from: $PRETRAIN_BEST"
 
-    python -m training.train_sft \
+    python -u -m training.train_sft \
         --pretrain-checkpoint "$PRETRAIN_BEST" \
         --data-dir data/sft \
         --epochs "$SFT_EPOCHS" \

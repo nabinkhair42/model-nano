@@ -212,7 +212,7 @@ class TrainingLogger:
             parts.append(f"gpu_mem {gpu_mem_mb:,.0f}MB")
         parts.append(f"elapsed {elapsed:.0f}s")
 
-        print(" | ".join(parts))
+        print(" | ".join(parts), flush=True)
 
         if self.use_wandb:
             import wandb
@@ -237,7 +237,7 @@ class TrainingLogger:
             step: Global step number.
             val_loss: Validation loss.
         """
-        print(f">>> EVAL step {step:>7d} | val_loss {val_loss:.4f}")
+        print(f">>> EVAL step {step:>7d} | val_loss {val_loss:.4f}", flush=True)
 
         if self.use_wandb:
             import wandb
@@ -246,7 +246,7 @@ class TrainingLogger:
     def finish(self) -> None:
         """Finalise logging (close W&B run if active)."""
         elapsed = time.time() - self._start_time
-        print(f"Training finished in {elapsed:.1f}s")
+        print(f"Training finished in {elapsed:.1f}s", flush=True)
         if self.use_wandb:
             import wandb
             wandb.finish()

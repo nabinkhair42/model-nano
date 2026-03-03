@@ -312,14 +312,14 @@ def train(args):
     best_val_loss = float("inf")
 
     effective_batch = sft_cfg.micro_batch_size * sft_cfg.grad_accumulation_steps
-    print(f"Effective batch size: {effective_batch}")
-    print(f"Total steps: {total_steps}, warmup: {warmup_steps}")
-    print(f"SFT for {sft_cfg.max_epochs} epochs, {steps_per_epoch} steps/epoch")
-    print(f"Loss masking (train on completions only): {mask_prompt}")
-    print(f"LR: {sft_cfg.lr}, min_lr: {sft_cfg.min_lr}")
-    print(f"Gradient checkpointing: {use_grad_ckpt}")
-    print(f"Device: {device}, dtype: {sft_cfg.dtype}")
-    print("-" * 80)
+    print(f"Effective batch size: {effective_batch}", flush=True)
+    print(f"Total steps: {total_steps}, warmup: {warmup_steps}", flush=True)
+    print(f"SFT for {sft_cfg.max_epochs} epochs, {steps_per_epoch} steps/epoch", flush=True)
+    print(f"Loss masking (train on completions only): {mask_prompt}", flush=True)
+    print(f"LR: {sft_cfg.lr}, min_lr: {sft_cfg.min_lr}", flush=True)
+    print(f"Gradient checkpointing: {use_grad_ckpt}", flush=True)
+    print(f"Device: {device}, dtype: {sft_cfg.dtype}", flush=True)
+    print("-" * 80, flush=True)
 
     step_start_time = time.time()
     accum_loss = 0.0

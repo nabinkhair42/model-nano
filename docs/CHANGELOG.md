@@ -135,6 +135,45 @@ The complete project was built from scratch in a single session. Everything belo
 
 ---
 
+## [0.1.2] - 2026-03-03
+
+### Pipeline Automation + Data & Bug Fixes
+
+#### New Files
+- **`train.sh`** — Full 8-step pipeline script with resume (`--from stepN`), skip flags, elapsed timing, and colored output
+- **`data/prepare_sft.py`** — NEW: creates `data/sft/train.bin` + `data/sft/train.mask.bin` with correct ChatML loss masks (only assistant tokens get loss)
+
+#### Bug Fixes
+
+| Bug | Root Cause | Fix |
+|-----|-----------|-----|
+| SFT loss = 0.0000 | `IM_START_ID=16381` wrong (actual id=0), causing runtime mask to never activate | Fixed to `IM_START_ID=0`, `IM_END_ID=1` in `training/dataset.py` |
+| SFT no improvement (mixed data) | `data/train.bin` mixed docs + instructions; most 512-token chunks contained no ChatML structure | Created `prepare_sft.py` to generate SFT-only data in `data/sft/` |
+| GitHub Docs AUTOTITLE spam | `_strip_markdown` converted `[AUTOTITLE](/path)` → `"AUTOTITLE"` in training text | Added explicit AUTOTITLE removal + Liquid template stripping in `collect_docs.py` |
+| Git man pages: 0 documents | git/git repo migrated from `.txt` to `.adoc` extensions in 2024 | `collect_git_manpages()` now globs both `*.txt` and `*.adoc` |
+| `--count` ambiguous argument | `generate_synthetic.py` had `--count-seed/errors/flags` so `--count` was ambiguous | Added explicit `--count N` flag splitting 40/20/40 across strategies |
+| DataLoader deadlock (num_workers=4) | Fork-based multiprocessing conflicts after prior CUDA initialization | Changed `create_dataloader` default to `num_workers=0`, `persistent_workers=False` |
+| Python output buffering via `tee` | `exec > >(tee -a log)` + Python's default 8KB buffer = no visible output during training | Added `python -u` (unbuffered) to all training commands in `train.sh` |
+| `sample_top_p scatter_` dimension error | `logits.scatter_(0, ...)` wrong for 2D tensors | Changed to `scatter_(-1, ...)` in `inference/generate.py` |
+| CLI default model path not found | Hardcoded `checkpoints/model.pt` didn't exist | Auto-detect from ordered candidates: `sft/best.pt → sft/final.pt → best.pt → final.pt` |
+
+#### Second Training Run (in progress as of 2026-03-03 08:31)
+
+Pipeline: `./train.sh --from step7 --synthetic-count 20000`
+
+Dataset (rebuilt with fixes):
+- 1,958 docs (Pro Git + git man pages with .adoc fix + tldr + GitHub Docs cleaned)
+- 20,000 synthetic pairs (4x larger than first run)
+- Pretrain: ~1.97M tokens in `data/train.bin`
+- SFT: ~9.7M tokens in `data/sft/train.bin` with companion `.mask.bin`
+
+Training status (estimated):
+- Phase 1: 1,180 total steps, ~2.1 hours, training at 100% GPU / 1850MB VRAM
+- Expected completion: ~10:38 AM
+- Phase 2 SFT to follow after Phase 1 checkpoint
+
+---
+
 ## Known Issues
 
 1. **Tokenizer vocab size** — When trained only on synthetic data (no external docs), the vocab is ~1,500 tokens instead of the target 16,384. This is expected; the full vocab is reached when training on the complete corpus (Pro Git + man pages + SO + synthetic).
@@ -153,10 +192,13 @@ See the roadmap in [ARCHITECTURE.md](ARCHITECTURE.md) for detailed technical imp
 - [x] Collect real-world data corpus (Pro Git, tldr, GitHub Docs) ✓
 - [x] Train tokenizer on full corpus — 16,384 vocab achieved ✓
 - [x] Complete Phase 1 pre-training run ✓ (val_loss 3.19)
-- [ ] **Fix git man pages parser** — 0/168 man pages parsed (AsciiDoc `.txt` detection broken)
+- [x] **Fix git man pages parser** — now parses both `.txt` and `.adoc` ✓
+- [x] **Fix GitHub Docs AUTOTITLE/Liquid template noise** ✓
+- [x] **Fix SFT loss masking** — correct ChatML token IDs + `prepare_sft.py` ✓
+- [x] **Expand synthetic data** — 5K → 20K pairs ✓
+- [x] **Automated pipeline** — `train.sh` runs all 8 steps with resume support ✓
 - [ ] **Collect Stack Overflow data** — biggest quality signal missing (~30K-50K pairs)
-- [ ] **Expand synthetic data** — currently 5K pairs, target 50K+
-- [ ] Complete Phase 2 SFT run
+- [ ] Complete Phase 2 SFT run (in progress)
 - [ ] Run benchmark and establish baseline accuracy
 
 ### Medium Priority
