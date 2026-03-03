@@ -544,6 +544,12 @@ def main() -> None:
         help="Directory to write synthetic.jsonl (default: data/raw)",
     )
     parser.add_argument(
+        "--count",
+        type=int,
+        default=None,
+        help="Total examples to generate, split 40/20/40 across strategies (overrides individual counts)",
+    )
+    parser.add_argument(
         "--count-seed",
         type=int,
         default=2000,
@@ -568,6 +574,12 @@ def main() -> None:
         help="Random seed for reproducibility (default: 42)",
     )
     args = parser.parse_args()
+
+    # --count splits total 40% seed / 20% errors / 40% flags
+    if args.count is not None:
+        args.count_seed   = int(args.count * 0.40)
+        args.count_errors = int(args.count * 0.20)
+        args.count_flags  = int(args.count * 0.40)
 
     rng = random.Random(args.seed)
     os.makedirs(args.output_dir, exist_ok=True)

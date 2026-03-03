@@ -151,8 +151,12 @@ def collect_git_manpages(clone_dir: str) -> list[dict]:
         print(f"  Git man pages: Documentation/ dir not found in {dest}")
         return records
 
-    # git-*.txt are the command man pages; also grab gitattributes.txt etc.
-    for path in sorted(docs_dir.glob("*.txt")):
+    # git project migrated from .txt to .adoc — support both
+    txt_files = list(docs_dir.glob("*.txt"))
+    adoc_files = list(docs_dir.glob("*.adoc"))
+    all_files = sorted(txt_files + adoc_files)
+    print(f"  Found {len(txt_files)} .txt + {len(adoc_files)} .adoc files")
+    for path in all_files:
         try:
             raw = path.read_text(encoding="utf-8", errors="replace")
         except OSError:
