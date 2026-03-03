@@ -240,7 +240,7 @@ def create_dataloader(
     dataset: Dataset,
     batch_size: int,
     shuffle: bool = True,
-    num_workers: int = 4,
+    num_workers: int = 0,
     pin_memory: bool = True,
     drop_last: bool = True,
 ) -> DataLoader:
@@ -264,5 +264,5 @@ def create_dataloader(
         num_workers=num_workers,
         pin_memory=pin_memory,
         drop_last=drop_last,
-        persistent_workers=num_workers > 0,
+        persistent_workers=False,
     )
