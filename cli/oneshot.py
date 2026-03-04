@@ -135,12 +135,20 @@ def run_oneshot(query: str, engine, context: GitContext = None):
     """
     is_piped = not sys.stdin.isatty()
 
-    # Generate response from the engine
-    prompt = _build_prompt(query, context)
+    # Generate response from the engine using ChatML format (matches training)
+    system_prompt = "You are a Git expert. Provide precise, correct git commands and explanations."
+    if context and context.is_git_repo:
+        system_prompt += "\n" + context.prompt_context()
+    prompt = engine.format_prompt(query, system_prompt=system_prompt)
 
     with console.status("[bold cyan]Thinking...[/bold cyan]", spinner="dots"):
         try:
-            response = engine.generate(prompt, max_new_tokens=256, temperature=0.0)
+            response = engine.generate(
+                prompt,
+                max_new_tokens=256,
+                temperature=0.0,
+                stop_tokens=["<|im_end|>"],
+            )
         except Exception as e:
             console.print(f"[red]Engine error: {e}[/red]")
             return
