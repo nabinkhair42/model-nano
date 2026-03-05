@@ -10,7 +10,7 @@ _PROJECT_ROOT = str(Path(__file__).resolve().parent.parent)
 if _PROJECT_ROOT not in sys.path:
     sys.path.insert(0, _PROJECT_ROOT)
 
-from config import ModelConfig
+from config import ModelConfig, DataConfig
 from model.transformer import NanoGPT
 from inference.generate import sample_token
 
@@ -18,9 +18,8 @@ from inference.generate import sample_token
 from tokenizers import Tokenizer
 
 
-DEFAULT_SYSTEM_PROMPT = (
-    "You are a Git expert. Provide precise, correct git commands and explanations."
-)
+# Use centralized system prompt from config
+DEFAULT_SYSTEM_PROMPT = DataConfig.system_prompt
 
 
 class InferenceEngine:

@@ -20,9 +20,16 @@ import itertools
 import json
 import os
 import random
+import sys
+from pathlib import Path
 from typing import NamedTuple
 
-SYSTEM_PROMPT = "You are a Git expert. Provide precise, correct git commands and explanations."
+# Add project root to path for config import
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from config import DataConfig
+
+# Use centralized system prompt from config
+SYSTEM_PROMPT = DataConfig.system_prompt
 
 
 # ═══════════════════════════════════════════════════════════════════════════

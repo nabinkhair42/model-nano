@@ -25,7 +25,7 @@ _PROJECT_ROOT = str(Path(__file__).resolve().parent.parent)
 if _PROJECT_ROOT not in sys.path:
     sys.path.insert(0, _PROJECT_ROOT)
 
-from config import ModelConfig, SFTConfig
+from config import ModelConfig, SFTConfig, DataConfig
 from model import NanoGPT
 from training.dataset import SFTDataset, create_dataloader
 from training.utils import (
@@ -156,7 +156,7 @@ def train(args):
     model_cfg = ModelConfig()
     sft_cfg = SFTConfig()
 
-    # Override from CLI
+    # Override from CLI (before auto-config)
     if args.lr is not None:
         sft_cfg.lr = args.lr
     if args.min_lr is not None:
@@ -186,13 +186,22 @@ def train(args):
     if args.no_mask_prompt:
         sft_cfg.mask_prompt = False
 
+    # Auto-configure batch size and dtype if not specified
+    if sft_cfg.micro_batch_size == -1 or sft_cfg.dtype == "auto":
+        sft_cfg = sft_cfg.auto_configure(model_cfg)
+
     checkpoint_dir = Path(args.checkpoint_dir or sft_cfg.checkpoint_dir)
     data_dir = Path(args.data_dir)
 
     # ---- Device & precision -----------------------------------------------
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    dtype = torch.bfloat16 if sft_cfg.dtype == "bfloat16" else torch.float16
-    dtype_ctx = torch.amp.autocast(device_type=device.type, dtype=dtype)
+    if sft_cfg.dtype == "bfloat16":
+        dtype = torch.bfloat16
+    elif sft_cfg.dtype == "float16":
+        dtype = torch.float16
+    else:
+        dtype = torch.float32
+    dtype_ctx = torch.amp.autocast(device_type=device.type, dtype=dtype, enabled=(dtype != torch.float32))
     scaler = torch.amp.GradScaler(enabled=(dtype == torch.float16))
 
     # ---- Data -------------------------------------------------------------
@@ -203,10 +212,14 @@ def train(args):
         print(f"ERROR: SFT training data not found at {train_path}")
         sys.exit(1)
 
+    data_cfg = DataConfig()
+    tokenizer_path = data_cfg.tokenizer_path
+
     train_dataset = SFTDataset(
         str(train_path),
         max_seq_len=model_cfg.max_seq_len,
         mask_prompt=sft_cfg.mask_prompt,
+        tokenizer_path=tokenizer_path,
     )
     train_loader = create_dataloader(
         train_dataset,
@@ -220,6 +233,7 @@ def train(args):
             str(val_path),
             max_seq_len=model_cfg.max_seq_len,
             mask_prompt=sft_cfg.mask_prompt,
+            tokenizer_path=tokenizer_path,
         )
         val_loader = create_dataloader(
             val_dataset,

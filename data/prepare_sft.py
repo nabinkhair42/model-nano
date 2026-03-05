@@ -21,11 +21,10 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from tokenizers import Tokenizer
+from config import DataConfig
 
-
-SYSTEM_PROMPT = (
-    "You are a Git expert. Provide precise, correct git commands and explanations."
-)
+# Use centralized system prompt from config
+SYSTEM_PROMPT = DataConfig.system_prompt
 
 
 def format_chatml(messages: list[dict]) -> str:
@@ -152,13 +151,13 @@ def pack_and_save(
     out_dir: Path,
     split: str,
     max_seq_len: int,
+    pad_id: int = 2,
 ) -> int:
     """Pack sequences into fixed-length chunks and save .bin + .mask.bin files.
 
     Each chunk is exactly max_seq_len + 1 tokens. Sequences shorter than that
-    are padded with 0 (the <|pad|> token). The mask is padded with 0.
+    are padded with pad_id (the <|pad|> token, ID 2). The mask is padded with 0.
     """
-    pad_id = 0
     chunk_len = max_seq_len + 1
     tokens_flat = []
     masks_flat = []
@@ -243,14 +242,17 @@ def main():
     tokenizer = Tokenizer.from_file(args.tokenizer)
     im_start_id = tokenizer.token_to_id("<|im_start|>")
     im_end_id = tokenizer.token_to_id("<|im_end|>")
-    print(f"  <|im_start|> id: {im_start_id},  <|im_end|> id: {im_end_id}")
+    pad_id = tokenizer.token_to_id("<|pad|>")
+    if pad_id is None:
+        pad_id = 2  # Default fallback
+    print(f"  <|im_start|> id: {im_start_id},  <|im_end|> id: {im_end_id},  <|pad|> id: {pad_id}")
 
     train_tokens, train_masks = tokenize_and_mask(train_records, tokenizer, args.max_seq_len)
     val_tokens, val_masks = tokenize_and_mask(val_records, tokenizer, args.max_seq_len)
 
     print(f"\nSaving to {out_dir} ...")
-    n_train_chunks = pack_and_save(train_tokens, train_masks, out_dir, "train", args.max_seq_len)
-    n_val_chunks = pack_and_save(val_tokens, val_masks, out_dir, "val", args.max_seq_len)
+    n_train_chunks = pack_and_save(train_tokens, train_masks, out_dir, "train", args.max_seq_len, pad_id)
+    n_val_chunks = pack_and_save(val_tokens, val_masks, out_dir, "val", args.max_seq_len, pad_id)
 
     print(f"\n{'='*60}")
     print("SFT DATASET STATISTICS")

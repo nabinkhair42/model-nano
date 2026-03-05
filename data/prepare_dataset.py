@@ -174,8 +174,15 @@ def tokenize_texts(
     Each text is tokenized independently. Sequences longer than max_seq_len
     are split into non-overlapping chunks.  We do NOT pad -- training will
     pack sequences densely.
+
+    Documents are separated by <|im_end|> token to mark boundaries.
     """
     all_ids: list[int] = []
+
+    # Get separator token ID (use <|im_end|> as document boundary)
+    separator_id = tokenizer.token_to_id("<|im_end|>")
+    if separator_id is None:
+        separator_id = 1  # Fallback to ID 1
 
     # Batch-encode for speed
     batch_size = 1024
@@ -184,6 +191,9 @@ def tokenize_texts(
         encodings = tokenizer.encode_batch(batch)
         for enc in encodings:
             ids = enc.ids
+            # Add separator between documents
+            if all_ids:  # Not the first document
+                all_ids.append(separator_id)
             # Split long sequences into chunks
             for chunk_start in range(0, len(ids), max_seq_len):
                 chunk = ids[chunk_start : chunk_start + max_seq_len]

@@ -1,7 +1,15 @@
 """Sampling strategies and convenience generation functions."""
 
+import sys
+from pathlib import Path
+
 import torch
 import torch.nn.functional as F
+
+# Ensure project root is importable
+_PROJECT_ROOT = str(Path(__file__).resolve().parent.parent)
+if _PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, _PROJECT_ROOT)
 
 
 def sample_top_k(logits: torch.Tensor, k: int) -> torch.Tensor:
@@ -93,9 +101,8 @@ def sample_token(
 # Convenience generation functions
 # ---------------------------------------------------------------------------
 
-DEFAULT_SYSTEM_PROMPT = (
-    "You are a Git expert. Provide precise, correct git commands and explanations."
-)
+from config import DataConfig
+DEFAULT_SYSTEM_PROMPT = DataConfig.system_prompt
 
 
 def generate_command(engine, query: str) -> str:

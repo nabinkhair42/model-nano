@@ -2,21 +2,27 @@
 # =============================================================================
 # train.sh — Full model-nano build pipeline
 #
+# Features:
+#   - Auto-detects GPU and configures optimal batch size/precision
+#   - Generates synthetic training data for better generalization
+#   - Two-phase training: pretrain on docs, then SFT on instructions
+#
 # Usage:
-#   ./train.sh                  # Run all steps from scratch
-#   ./train.sh --from step3     # Resume from a specific step
-#   ./train.sh --skip-collect   # Skip data collection (use existing raw data)
-#   ./train.sh --synthetic-count 20000
+#   ./train.sh                      # Run all steps from scratch
+#   ./train.sh --from step3         # Resume from a specific step
+#   ./train.sh --skip-collect       # Skip data collection (use existing)
+#   ./train.sh --synthetic-count 50000  # More synthetic data
+#   ./train.sh --sft-epochs 3       # Override SFT epochs
 #
 # Steps:
 #   step1  Clean stale clones
 #   step2  Collect real documentation
-#   step3  Generate synthetic data
+#   step3  Generate synthetic data (default: 30k examples)
 #   step4  Train tokenizer
 #   step5  Prepare pretrain dataset
-#   step6  Prepare SFT dataset
-#   step7  Phase 1 pre-training
-#   step8  Phase 2 SFT
+#   step6  Prepare SFT dataset (with loss masks)
+#   step7  Phase 1 pre-training (10 epochs)
+#   step8  Phase 2 SFT (2 epochs - kept low to prevent overfitting)
 # =============================================================================
 
 set -euo pipefail
@@ -26,9 +32,9 @@ set -euo pipefail
 # ---------------------------------------------------------------------------
 FROM_STEP="step1"
 SKIP_COLLECT=false
-SYNTHETIC_COUNT=10000
-PRETRAIN_EPOCHS=20
-SFT_EPOCHS=5
+SYNTHETIC_COUNT=30000       # More data = better generalization
+PRETRAIN_EPOCHS=10          # Reduced from 20 (sufficient with more data)
+SFT_EPOCHS=2                # CRITICAL: Keep low to prevent overfitting (was 5)
 CLONE_DIR="/tmp/model-nano-sources"
 LOG_DIR="logs"
 
@@ -144,8 +150,20 @@ echo -e "  Epochs P1:   $PRETRAIN_EPOCHS"
 echo -e "  Epochs SFT:  $SFT_EPOCHS"
 echo -e "  Log file:    $LOGFILE"
 
-# Verify Python and GPU
-python -c "import torch; gpu=torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU only'; print(f'  Device:      {gpu}')"
+# Verify Python and GPU (with auto-detection info)
+python -c "
+import torch
+from training.gpu_utils import get_gpu_info, get_optimal_dtype
+
+gpu_info = get_gpu_info()
+if gpu_info:
+    print(f'  Device:      {gpu_info.name}')
+    print(f'  VRAM:        {gpu_info.total_memory_gb:.1f} GB')
+    print(f'  Precision:   {get_optimal_dtype(gpu_info)}')
+else:
+    print('  Device:      CPU only (no CUDA)')
+    print('  WARNING:     Training will be very slow!')
+"
 
 # ---------------------------------------------------------------------------
 # STEP 1 — Clean stale clones
@@ -308,12 +326,15 @@ if should_run "step8"; then
     fi
 
     log_info "Loading pretrain weights from: $PRETRAIN_BEST"
+    log_info "Using $SFT_EPOCHS epochs (keep low to prevent overfitting)"
 
     python -u -m training.train_sft \
         --pretrain-checkpoint "$PRETRAIN_BEST" \
         --data-dir data/sft \
         --epochs "$SFT_EPOCHS" \
-        --checkpoint-dir checkpoints/sft
+        --checkpoint-dir checkpoints/sft \
+        --eval-interval 50 \
+        --save-interval 100
 
     if [ -f "checkpoints/sft/best.pt" ]; then
         SFT_CKPT="checkpoints/sft/best.pt"

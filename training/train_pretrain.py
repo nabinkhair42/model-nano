@@ -114,7 +114,7 @@ def train(args):
     model_cfg = ModelConfig()
     train_cfg = TrainingConfig()
 
-    # Override from CLI
+    # Override from CLI (before auto-config)
     if args.lr is not None:
         train_cfg.lr = args.lr
     if args.min_lr is not None:
@@ -142,13 +142,22 @@ def train(args):
     if args.wandb_project is not None:
         train_cfg.wandb_project = args.wandb_project
 
+    # Auto-configure batch size and dtype if not specified
+    if train_cfg.micro_batch_size == -1 or train_cfg.dtype == "auto":
+        train_cfg = train_cfg.auto_configure(model_cfg)
+
     checkpoint_dir = Path(args.checkpoint_dir or train_cfg.checkpoint_dir)
     data_dir = Path(args.data_dir)
 
     # ---- Device & precision -----------------------------------------------
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    dtype = torch.bfloat16 if train_cfg.dtype == "bfloat16" else torch.float16
-    dtype_ctx = torch.amp.autocast(device_type=device.type, dtype=dtype)
+    if train_cfg.dtype == "bfloat16":
+        dtype = torch.bfloat16
+    elif train_cfg.dtype == "float16":
+        dtype = torch.float16
+    else:
+        dtype = torch.float32
+    dtype_ctx = torch.amp.autocast(device_type=device.type, dtype=dtype, enabled=(dtype != torch.float32))
     scaler = torch.amp.GradScaler(enabled=(dtype == torch.float16))
 
     # ---- Data -------------------------------------------------------------

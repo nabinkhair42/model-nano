@@ -73,7 +73,7 @@ class SFTDataset(Dataset):
     generate responses, not to parrot the prompts.
     """
 
-    # Sentinel special-token IDs — must match tokenizer/tokenizer.json.
+    # Default special-token IDs — these are overridden if tokenizer_path is provided.
     # The tokenizer assigns special tokens first: <|im_start|>=0, <|im_end|>=1.
     IM_START_ID: int = 0   # <|im_start|>
     IM_END_ID: int = 1     # <|im_end|>
@@ -83,15 +83,31 @@ class SFTDataset(Dataset):
         path: str,
         max_seq_len: int = 512,
         mask_prompt: bool = True,
+        tokenizer_path: str | None = None,
     ):
         """
         Args:
             path: Path to a .bin file containing packed SFT samples.
             max_seq_len: Maximum sequence length (samples are padded/truncated).
             mask_prompt: If True, loss_mask = 0 for non-assistant tokens.
+            tokenizer_path: If provided, load tokenizer to get correct special token IDs.
         """
         self.max_seq_len = max_seq_len
         self.mask_prompt = mask_prompt
+
+        # Load tokenizer to get correct special token IDs (avoid hardcoding)
+        if tokenizer_path is not None:
+            try:
+                from tokenizers import Tokenizer
+                tokenizer = Tokenizer.from_file(tokenizer_path)
+                im_start = tokenizer.token_to_id("<|im_start|>")
+                im_end = tokenizer.token_to_id("<|im_end|>")
+                if im_start is not None:
+                    self.IM_START_ID = im_start
+                if im_end is not None:
+                    self.IM_END_ID = im_end
+            except Exception:
+                pass  # Fall back to defaults
 
         # Memory-map the token data.
         self.data = np.memmap(path, dtype=np.uint16, mode="r")

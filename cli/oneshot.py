@@ -3,13 +3,23 @@
 import re
 import subprocess
 import sys
+from pathlib import Path
 
 from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
 from rich.prompt import Prompt
 
+# Add project root for config import
+_PROJECT_ROOT = str(Path(__file__).resolve().parent.parent)
+if _PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, _PROJECT_ROOT)
+
+from config import DataConfig
 from cli.context import GitContext
+
+# Use centralized system prompt
+DEFAULT_SYSTEM_PROMPT = DataConfig.system_prompt
 
 console = Console()
 
@@ -104,20 +114,6 @@ def _copy_to_clipboard(text: str) -> bool:
     return False
 
 
-def _build_prompt(query: str, context: GitContext | None) -> str:
-    """Build the full prompt including system context and user query."""
-    parts = [
-        "You are a Git expert. Provide precise, correct git commands and explanations.",
-        "Respond concisely. If a git command is appropriate, include it.",
-    ]
-    if context and context.is_git_repo:
-        parts.append("")
-        parts.append(context.prompt_context())
-
-    parts.append("")
-    parts.append(f"User: {query}")
-    parts.append("Assistant:")
-    return "\n".join(parts)
 
 
 def run_oneshot(query: str, engine, context: GitContext = None):
@@ -136,7 +132,7 @@ def run_oneshot(query: str, engine, context: GitContext = None):
     is_piped = not sys.stdin.isatty()
 
     # Generate response from the engine using ChatML format (matches training)
-    system_prompt = "You are a Git expert. Provide precise, correct git commands and explanations."
+    system_prompt = DEFAULT_SYSTEM_PROMPT
     if context and context.is_git_repo:
         system_prompt += "\n" + context.prompt_context()
     prompt = engine.format_prompt(query, system_prompt=system_prompt)
