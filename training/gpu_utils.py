@@ -160,22 +160,24 @@ def calculate_optimal_batch_size(
     target_effective_batch = 64
 
     # Heuristic batch size based on GPU memory (empirically tested)
-    # These are conservative estimates that should work reliably
-    # Based on model-nano (~58M params, 512 seq len, gradient checkpointing)
+    # Target ~70-80% GPU utilization for model-nano (~58M params, 512 seq len)
+    # With gradient checkpointing enabled
     if gpu_info.total_memory_gb >= 24:
-        suggested_batch = 16
+        suggested_batch = 48  # ~80% of 24GB
+    elif gpu_info.total_memory_gb >= 16:
+        suggested_batch = 32  # ~80% of 16GB
     elif gpu_info.total_memory_gb >= 12:
-        suggested_batch = 8
+        suggested_batch = 24  # ~80% of 12GB
     elif gpu_info.total_memory_gb >= 8:
-        suggested_batch = 6
+        suggested_batch = 16  # ~80% of 8GB
     elif gpu_info.total_memory_gb >= 6:
-        suggested_batch = 4
-    elif gpu_info.total_memory_gb >= 4:
-        suggested_batch = 4  # 4GB GPUs can handle batch 4 with checkpointing
+        suggested_batch = 12  # ~80% of 6GB
+    elif gpu_info.total_memory_gb >= 3.5:
+        suggested_batch = 10  # ~80% of 3.5-4GB (~2.8GB usage)
     elif gpu_info.total_memory_gb >= 3:
-        suggested_batch = 2
+        suggested_batch = 6   # ~80% of 3GB
     else:
-        suggested_batch = 1
+        suggested_batch = 4
 
     # Use the heuristic-based batch size (more reliable than calculation)
     optimal_batch = suggested_batch

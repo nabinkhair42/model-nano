@@ -185,6 +185,8 @@ def train(args):
         sft_cfg.wandb_project = args.wandb_project
     if args.no_mask_prompt:
         sft_cfg.mask_prompt = False
+    if args.no_gradient_checkpointing:
+        sft_cfg.gradient_checkpointing = False
 
     # Auto-configure batch size and dtype if not specified
     if sft_cfg.micro_batch_size == -1 or sft_cfg.dtype == "auto":
@@ -478,6 +480,8 @@ def parse_args():
     parser.add_argument("--wandb-project", type=str, default=None)
     parser.add_argument("--no-mask-prompt", action="store_true",
                         help="Disable prompt masking (train on full sequence).")
+    parser.add_argument("--no-gradient-checkpointing", action="store_true",
+                        help="Disable gradient checkpointing (uses more memory but faster).")
     return parser.parse_args()
 
 
