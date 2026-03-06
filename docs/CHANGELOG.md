@@ -135,6 +135,43 @@ The complete project was built from scratch in a single session. Everything belo
 
 ---
 
+## [0.1.3] - 2026-03-06
+
+### SFT Training Complete + GPU Optimization
+
+#### Training Results
+
+| Metric | Value |
+|--------|-------|
+| Total steps | 1,550 |
+| Epochs | 2 |
+| Total tokens processed | 29,184,000 (~29M) |
+| Training time | ~6,006s (~100 min) |
+| GPU memory | 895 MB / 3,680 MB |
+| Speed | ~5,550 tok/s |
+| Final train loss | 0.0014 |
+| Final val loss | 0.0014 |
+| Best checkpoint | `checkpoints/sft/best.pt` |
+
+#### Added
+
+- **`--no-gradient-checkpointing` flag** in `train_sft.py` — Disables gradient checkpointing for faster training on GPUs with >8GB VRAM. Required for ≤6GB GPUs.
+- **Action Prompt documentation** — Updated README with interactive menu explanation (Enter/e/c/q keys)
+- **Global installation via pipx** — `pipx install -e /path/to/model-nano` makes `git-nano` available system-wide
+
+#### Changed
+
+- **GPU batch size heuristics** in `training/gpu_utils.py` — Updated for better memory utilization targeting ~70-80% GPU usage
+- **Simplified README** — Condensed from ~190 lines to ~90 lines, removed verbose sections
+
+#### Analysis
+
+- Train loss (0.0014) matches val loss (0.0014) — good generalization, no overfitting
+- Gradient norm stable at 0.01-0.02 throughout training
+- Model ready for CLI testing with `git-nano "your question"`
+
+---
+
 ## [0.1.2] - 2026-03-03
 
 ### Pipeline Automation + Data & Bug Fixes
@@ -198,7 +235,7 @@ See the roadmap in [ARCHITECTURE.md](ARCHITECTURE.md) for detailed technical imp
 - [x] **Expand synthetic data** — 5K → 20K pairs ✓
 - [x] **Automated pipeline** — `train.sh` runs all 8 steps with resume support ✓
 - [ ] **Collect Stack Overflow data** — biggest quality signal missing (~30K-50K pairs)
-- [ ] Complete Phase 2 SFT run (in progress)
+- [x] Complete Phase 2 SFT run ✓ (val_loss 0.0014, 1550 steps)
 - [ ] Run benchmark and establish baseline accuracy
 
 ### Medium Priority

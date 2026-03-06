@@ -7,11 +7,13 @@ Step-by-step instructions for training model-nano from scratch.
 ## Prerequisites
 
 ### Hardware
+
 - GPU with 4+ GB VRAM (RTX 3050 or better)
 - 16+ GB system RAM
 - 10+ GB disk space (for data + checkpoints)
 
 ### Software
+
 ```bash
 pip install -r requirements.txt
 # or
@@ -19,6 +21,7 @@ pip install -e ".[train]"
 ```
 
 Verify GPU:
+
 ```bash
 python -c "import torch; print(torch.cuda.is_available(), torch.cuda.get_device_name(0))"
 ```
@@ -34,6 +37,7 @@ python data/collect_docs.py
 ```
 
 This clones and parses:
+
 - Pro Git book (AsciiDoc -> plain text)
 - Git man pages (168 commands)
 - tldr-pages (structured command examples)
@@ -60,6 +64,7 @@ python data/generate_synthetic.py --count 5000
 ```
 
 Generates instruction pairs using three strategies:
+
 - Seed expansion (command variations)
 - Error scenarios (error -> diagnosis + fix)
 - Flag combinatorics (command + flag pairs)
@@ -75,6 +80,7 @@ python tokenizer/train_tokenizer.py
 ```
 
 Options:
+
 ```
 --input-dir DIR     Source text directory (default: data/raw)
 --output PATH       Output path (default: tokenizer/tokenizer.json)
@@ -85,6 +91,7 @@ Options:
 The tokenizer needs a large enough corpus to reach the full 16,384 vocab. With only synthetic data, it will be smaller (~1,500). With all sources combined, it should reach or approach the target.
 
 Verify:
+
 ```bash
 python tokenizer/train_tokenizer.py --verify-only
 ```
@@ -98,6 +105,7 @@ python data/prepare_dataset.py
 ```
 
 This pipeline:
+
 1. Loads all JSONL files from `data/raw/`
 2. Deduplicates by normalized content
 3. Formats into tokenizable text (ChatML for instructions, raw for docs)
@@ -108,6 +116,7 @@ This pipeline:
 Output: `data/train.bin`, `data/val.bin`
 
 Options:
+
 ```
 --raw-dir DIR       Raw data directory (default: data/raw)
 --output-dir DIR    Output directory (default: data)
@@ -151,10 +160,11 @@ python -m training.train_pretrain \
 ### Monitoring
 
 Watch for:
+
 - **Loss decreasing** steadily (not flat, not exploding)
 - **Val loss tracking** train loss (not diverging = no overfitting)
-- **GPU memory** staying under 3.5 GB (`nvidia-smi`)
-- **Gradient norm** staying reasonable (not spiking)
+- **GPU memory** — ~900MB on 4GB GPU with gradient checkpointing (`nvidia-smi`)
+- **Gradient norm** staying reasonable (0.01-0.05 is healthy, >1.0 indicates instability)
 
 The script logs loss, learning rate, tokens/sec, gradient norm, and GPU memory every 10 steps.
 
@@ -186,13 +196,13 @@ python -m training.train_sft \
 
 ### Differences from Pre-training
 
-| Aspect | Phase 1 | Phase 2 |
-|--------|---------|---------|
-| Objective | Next-token prediction | Instruction following |
-| Data | Raw documentation text | ChatML instruction pairs |
-| Loss | All tokens | Assistant completions only |
-| Learning rate | 1e-3 | 2e-5 |
-| Epochs | 10-20 | 3-5 |
+| Aspect        | Phase 1                | Phase 2                    |
+| ------------- | ---------------------- | -------------------------- |
+| Objective     | Next-token prediction  | Instruction following      |
+| Data          | Raw documentation text | ChatML instruction pairs   |
+| Loss          | All tokens             | Assistant completions only |
+| Learning rate | 1e-3                   | 2e-5                       |
+| Epochs        | 10-20                  | 3-5                        |
 
 ### Loss Masking
 
@@ -204,7 +214,22 @@ The SFT training masks loss on system and user tokens. Only the assistant's resp
 --pretrain-checkpoint PATH    Phase 1 weights to load (required)
 --lr FLOAT                    Peak LR (default: 2e-5)
 --no-mask-prompt              Disable loss masking (train on all tokens)
+--no-gradient-checkpointing   Disable gradient checkpointing (faster but uses more VRAM)
+--resume PATH                 Resume from SFT checkpoint
 ```
+
+### GPU Memory Notes
+
+The training script auto-detects your GPU and selects an appropriate batch size:
+
+| GPU VRAM | Batch Size | Expected Memory                      |
+| -------- | ---------- | ------------------------------------ |
+| 24GB+    | 48         | ~80% usage                           |
+| 16GB     | 32         | ~80% usage                           |
+| 8GB      | 16         | ~80% usage                           |
+| 4GB      | 10         | ~900MB (with gradient checkpointing) |
+
+**Important**: GPUs with ≤6GB VRAM **require** gradient checkpointing. Disabling it with `--no-gradient-checkpointing` will cause OOM on small GPUs.
 
 ### What to Expect
 
@@ -224,6 +249,7 @@ python -m eval.benchmark \
 ```
 
 This runs the 50 test cases and reports per-category accuracy:
+
 - **Command tasks**: scored by exact match + command equivalence
 - **Explanation tasks**: scored by response quality heuristics
 
@@ -237,10 +263,22 @@ Target accuracy: 50-70% on v1 (this is a small model — it won't match GPT-4).
 
 If you get CUDA OOM errors:
 
-1. **Reduce micro batch size**: `--micro-batch-size 2` (increase `--grad-accumulation` to compensate)
-2. **Verify gradient checkpointing**: Should be enabled by default
+1. **Ensure gradient checkpointing is enabled**: This is on by default. Do NOT use `--no-gradient-checkpointing` on GPUs with ≤6GB VRAM
+2. **Reduce micro batch size**: `--micro-batch-size 2` (increase `--grad-accumulation` to compensate)
 3. **Check other GPU processes**: `nvidia-smi` — kill anything using VRAM
 4. **Reduce sequence length**: Edit `config.py`, set `max_seq_len = 256`
+
+### Low GPU Memory Usage
+
+If GPU memory seems low (~900MB on a 4GB GPU), this is **normal and expected**:
+
+- Model weights (BF16): ~116MB
+- Optimizer states (FP32): ~465MB
+- Gradients (BF16): ~116MB
+- CUDA overhead: ~200MB
+- **Total baseline: ~900MB**
+
+With gradient checkpointing, activation memory is minimal. The batch size auto-selection already targets ~70-80% utilization where possible.
 
 ### Loss Not Decreasing
 

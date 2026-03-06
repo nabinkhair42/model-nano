@@ -126,9 +126,21 @@ Three techniques make training possible on 4GB VRAM:
 
 1. **BF16 mixed precision**: Halves memory for weights, gradients, and activations. BFloat16 has the same exponent range as FP32 (no loss scaling needed), unlike FP16.
 
-2. **Gradient checkpointing**: Instead of storing all intermediate activations, recompute them during the backward pass. Trades ~30% extra compute for ~60% memory savings.
+2. **Gradient checkpointing**: Instead of storing all intermediate activations, recompute them during the backward pass. Trades ~30% extra compute for ~60% memory savings. **Required for GPUs with ≤6GB VRAM.** Can be disabled with `--no-gradient-checkpointing` for faster training on larger GPUs.
 
 3. **Gradient accumulation**: Process micro-batches of 4 sequences, accumulate gradients over 16 steps, then update. Achieves effective batch size of 64 without needing memory for 64 sequences.
+
+### Memory Breakdown (4GB GPU)
+
+| Component | Size |
+|-----------|------|
+| Model weights (BF16) | ~116 MB |
+| Optimizer states (FP32) | ~465 MB |
+| Gradients (BF16) | ~116 MB |
+| CUDA overhead | ~200 MB |
+| **Total baseline** | **~900 MB** |
+
+With gradient checkpointing enabled, activation memory is minimal. Disabling it on a 4GB GPU causes OOM.
 
 ### Optimizer Details
 
