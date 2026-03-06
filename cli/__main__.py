@@ -27,25 +27,35 @@ def _resolve_device(device: str) -> str:
     return "cpu"
 
 
+def _get_project_root() -> str:
+    """Get the project root directory (where this package is installed)."""
+    from pathlib import Path
+    return str(Path(__file__).resolve().parent.parent)
+
+
 def _load_engine(model: str | None, tokenizer: str | None, device: str):
     """Load the inference engine, handling missing dependencies gracefully.
 
     Returns the engine instance, or None if loading fails.
     """
+    import os
+    from pathlib import Path
+
     resolved_device = _resolve_device(device)
+    project_root = _get_project_root()
 
     # Default paths if not specified — prefer SFT checkpoint, fall back to pretrain
+    # Use absolute paths relative to project root for global CLI usage
     if model is None:
-        import os
         candidates = [
-            "checkpoints/sft/best.pt",
-            "checkpoints/sft/final.pt",
-            "checkpoints/best.pt",
-            "checkpoints/final.pt",
+            os.path.join(project_root, "checkpoints/sft/best.pt"),
+            os.path.join(project_root, "checkpoints/sft/final.pt"),
+            os.path.join(project_root, "checkpoints/best.pt"),
+            os.path.join(project_root, "checkpoints/final.pt"),
         ]
         model = next((p for p in candidates if os.path.exists(p)), candidates[0])
     if tokenizer is None:
-        tokenizer = "tokenizer/tokenizer.json"
+        tokenizer = os.path.join(project_root, "tokenizer/tokenizer.json")
 
     try:
         from inference.engine import InferenceEngine
